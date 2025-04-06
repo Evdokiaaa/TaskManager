@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./routes/ProtectedRoute";
+import ProtectedRoute from "../routes/ProtectedRoute";
 import { useState } from "react";
 
 function App() {
