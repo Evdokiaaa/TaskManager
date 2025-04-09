@@ -1,6 +1,17 @@
 import mongoose from "mongoose";
 
-const userScheme = new mongoose.Schema(
+export interface IUser extends Document {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: "ADMIN" | "USER";
+  profileImage?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+const userScheme = new mongoose.Schema<IUser>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },

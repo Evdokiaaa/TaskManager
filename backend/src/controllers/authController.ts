@@ -48,17 +48,81 @@ const registerUser = async (req: Request, res: Response): Promise<any> => {
 @POST api/auth/login
 @ДОСТУП - PUBLIC
  */
-const loginUser = (req: Request, res: Response) => {};
+const loginUser = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    const isPasswordCorrect = bcscrypt.compareSync(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
+    return res.status(200).json({
+      message: "User logged in",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profileImage,
+        role: user.role,
+        token: generateToken(user._id.toString()),
+      },
+    });
+  } catch {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 /* 
 Получение профиля пользователя
 @GET api/auth/profile
-@ДОСТУП - PRIVATE
+@ДОСТУП - PRIVATE.select("-password")
  */
-const getUserProfile = (req: Request, res: Response) => {};
+const getUserProfile = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const user = await User.findById(req.user!.id).select("-password");
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    return res.status(200).json(user);
+  } catch (error) {}
+};
 /* 
 Обновление профиля пользователя
 @PUT api/auth/profile
 @ДОСТУП - PRIVATE
  */
-const updateUserProfile = (req: Request, res: Response) => {};
+const updateUserProfile = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = req.user!.id;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+    //TODO: Насчёт картинки не знаю, возможно сделаю
+    if (req.body.password) {
+      const salt = await bcscrypt.genSalt(10);
+      const newPassword = await bcscrypt.hash(req.body.password, salt);
+      user.password = newPassword;
+    }
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      message: "User updated",
+      user: {
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        profileImage: updatedUser.profileImage,
+        role: updatedUser.role,
+        token: generateToken(updatedUser._id.toString()),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 export { registerUser, loginUser, getUserProfile, updateUserProfile };
